@@ -11,10 +11,10 @@ const middlewareWrapper = schema => {
   middleware.pageRoute = (req, res) => {
     let data = convertSchemas(schema)
     const renderedHTML =
-      fs.readFileSync(path.join(__dirname, '/public/index.html'))
+      fs.readFileSync(path.join(__dirname, '/public/test.html'))
         .toString()
-        .replace(/{{ data }}/g, JSON.stringify(data))
-        .replace(/{{ style }}/g, fs.readFileSync(path.join(__dirname, '/public/stylesheets/style.css')))
+        .replace(/{ data }/g, JSON.stringify(data))
+        .replace(/{ style }/g, fs.readFileSync(path.join(__dirname, '/public/stylesheets/style.css')))
     res.send(renderedHTML);
 
   };

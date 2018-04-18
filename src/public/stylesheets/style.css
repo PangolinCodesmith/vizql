@@ -20,34 +20,40 @@ h1 {
     margin-bottom: 1rem;
 }
 
-tr {
+/* tr {
     margin-top: 15px;
     margin-bottom: 15px;
-}
+} */
 
 table {
     background-color: #9fd8cbd6;
-    font-weight: 100;
+    /* font-weight: 100; */
     border-radius: 3px;
     box-sizing: border-box;
     padding: 0.8rem;
     border: 2px solid #333;
     font-size: 1.10rem;
-    min-width: 23%;
-    line-height: 1.7rem;
-    word-spacing: 0.5rem;
-    margin: 1%;
+    /* min-width: 23%; */
+    /* line-height: 1.7rem; */
+    /* word-spacing: 0.5rem; */
+    /* margin: 1%; */
 }
 
 th {
     border-bottom: 2px solid #333;
 }
 
-#data-container {
+/* #data-container {
     display: flex;
     align-content: center;
     padding: 1rem;
     margin: auto;
     width: 85%;
     flex-wrap: wrap;
+} */
+
+.link {
+    fill: none;
+    stroke: #333333;
+    stroke-width: 3px;
 }

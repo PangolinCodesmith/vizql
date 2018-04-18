@@ -4,11 +4,6 @@ const { singularize } = require('inflection');
 //using the .models method, traverses down to the attributes and stores all
 //attribute names in an array along with the associated table
 
-// const hasRelation = (attr) => {
-//     if (attr['references']) return true;
-//     return false;
-// }
-
 const convertSchemas = (schema) => {
     let schemas = [];
     let links = [];
@@ -20,9 +15,9 @@ const convertSchemas = (schema) => {
             let relation = model.rawAttributes[attribute]['references'];
             if (relation) {
                 if (!schema.models[relation.model]) {
-                    links.push({ source: modelKey, target: singularize(relation.model) });
+                    links.push({ source: modelKey, target: singularize(relation.model), relationIndex: columnNames.length});
                 } else {
-                    links.push({ source: modelKey, target: relation.model })
+                    links.push({ source: modelKey, target: relation.model, relationIndex: columnNames.length})
                 }
             }
             columnNames.push({ content: attribute, type: dataType, relation });
@@ -33,7 +28,7 @@ const convertSchemas = (schema) => {
             columns: columnNames,
         });
     }
-    console.log(schemas)
+
     return { schemas, links };
 }
 
