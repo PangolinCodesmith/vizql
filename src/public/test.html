@@ -39,31 +39,19 @@
 
 <script>
     let data = { data };
-    console.log(data.schemas, data.links)
 
     var svg = d3.select("svg"),
         width = window.innerWidth,
-        height = window.innerHeight
+        height = window.innerHeight,
+        viewX = 0,
+        viewY = 0
 
-    svg.attr("width", window.innerWidth)
-    svg.attr("height", window.innerHeight);
+    svg.attr("width", width)
+    svg.attr("height", height);
+    svg.attr('viewBox', `${viewX} ${viewY} ${width} ${height}`)
 
     var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var simulation = d3.forceSimulation()
-        .force("link", d3.forceLink().distance(300).strength(2))
-        .force("charge", d3.forceManyBody())
-        .force("center", d3.forceCenter(width / 2, height / 2));
-
-    // replace relations with cyclic links
-    // data.schemas.forEach(schema => {
-    //     schema.columns.forEach(row => {
-    //         if (row.relation) row.relation = {
-    //             source: schema,
-    //             target: data.schemas.find(s => s.name === row.relation.model)
-    //         }
-    //     })
-    // })
 
     var nodes = data.schemas,
         nodeById = d3.map(nodes, d => d.name),
@@ -107,27 +95,112 @@
 
     // get table size
     table.each((function (d) {
-        d.width = d3.select(this).node().clientWidth
+        const element = d3.select(this).node()
+        d.width = element.clientWidth
+        d.height = element.clientHeight
     }))
+
+    const collisionForce = d3.forceCollide()
+        .radius(function (d) { return Math.max(d.width * 0.8, d.height * 0.8) })
+        .strength(0.4)
+
+
+    function alignmentForce(alpha) {
+        if (alpha < 0.001) alpha = 0
+        const targetDistance = 100
+        links.forEach(({ source, target }) => {
+            const distance = target.x - source.x
+            if (distance < targetDistance) {
+                source.vx -= alpha * 3
+                target.vx += alpha * 3
+            } else if (distance > targetDistance * 2) {
+                source.vx += alpha * 3
+                target.vx -= alpha * 3
+            }
+
+            const heightDifference = source.y - target.y
+            if (heightDifference > 0) {
+                source.vy -= alpha * heightDifference * 0.1
+                target.vy += alpha * heightDifference * 0.1
+            }
+            else if (heightDifference < 0) {
+                source.vy += alpha * -heightDifference * 0.1
+                target.vy -= alpha * -heightDifference * 0.1
+            }
+
+        })
+    }
+
+    function centerForce(width, height) {
+        return d3.forceCenter(width / 2, height / 2)
+    }
+
+    var simulation = d3.forceSimulation()
+        .force("align", alignmentForce)
+        .force("center", centerForce(width, height))
+        .force("collision", collisionForce)
 
     simulation
         .nodes(nodes)
-        .on("tick", ticked);
+        .on("tick", ticked)
+        .on('end', () => {
+            simulation
+                .force('collision', null)
+                .force('align', null)
+                .force('center', null)
+        })
+
+    document.addEventListener('keydown', ({ key }) => {
+        if (key === ' ') {
+            simulation
+                .force("align", alignmentForce)
+                .force("collision", collisionForce)
+                .force('center', centerForce(width, height))
+                .alphaTarget(0.3)
+                .restart();
+        }
+    })
+    let lastDrag = { x: 0, y: 0 }
+    const dragBackground = d3.drag()
+        .on('start', () => {
+            lastDrag = { x: d3.event.x, y: d3.event.y }
+        })
+        .on("drag", () => {
+            viewX -= d3.event.x - lastDrag.x
+            viewY -= d3.event.y - lastDrag.y
+            lastDrag.x = d3.event.x
+            lastDrag.y = d3.event.y
+            svg.attr('viewBox', `${viewX} ${viewY} ${width} ${height}`)
+        })
+
+    d3.select('svg').call(dragBackground)
 
 
-    simulation.force("link")
-        .links(links);
+
+    document.addEventListener('wheel', (e) => {
+        if (e.deltaY > -height && e.deltaY > -width) {
+            height += e.deltaY
+            width += e.deltaY
+            const vOffset = (e.clientY / window.innerHeight) * e.deltaY
+            const hOffset = (e.clientX / window.innerWidth) * e.deltaY
+            viewX -= hOffset
+            viewY -= vOffset
+
+            svg.attr('viewBox', `${viewX} ${viewY} ${width} ${height}`)
+        }
+    })
 
     function ticked() {
+
         link.attr("d", positionLink);
         node.attr("transform", positionNode);
     }
 
     function positionLink({ source, target, relationIndex }) {
-        const sx = source.x + source.width
-        const sy = source.y + 47 + 23 * (relationIndex)
-        const tx = target.x
-        const ty = target.y
+        const sx = source.x + (source.width / 2)
+        const sy = source.y - (source.height / 2) + 47 + 23 * (relationIndex)
+        const tx = target.x - (target.width / 2)
+        const ty = target.y - (target.height / 2)
         const offset = sx < tx ? -10 : 10
         const arrow = `l 0 -5 l ${-offset} 5 l ${offset} 5 l 0 -5`
         return `M ${sx} ${sy}, 
@@ -138,7 +211,7 @@
     }
 
     function positionNode(d) {
-        return "translate(" + d.x + "," + d.y + ")";
+        return `translate(${d.x - (d.width / 2)},${d.y - (d.height / 2)})`
     }
 
     function dragstarted(d) {
