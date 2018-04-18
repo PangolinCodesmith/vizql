@@ -91,10 +91,9 @@
 
     // get table size
     table.each((function (d) {
-        d.size = d3.select(this).node().getBoundingClientRect()
+        d.width = d3.select(this).node().clientWidth
     }))
 
-    console.log(links)
     simulation
         .nodes(nodes)
         .on("tick", ticked);
@@ -109,16 +108,16 @@
     }
 
     function positionLink({ source, target }) {
-        const sx = source.x + source.size.width
+        const sx = source.x + source.width
         const sy = source.y
         const tx = target.x
         const ty = target.y
         const offset = sx < tx ? -10 : 10
-        const midpoint = Math.abs(tx - sx) / 2 + (tx < sx ? tx : sx)
+        // const midpoint = Math.abs(tx - sx) / 2 + (tx < sx ? tx : sx)
         const arrow = `l 0 -5 l ${-offset} 5 l ${offset} 5 l 0 -5`
-        return `M ${sx - offset} ${sy},
-            C ${midpoint} ${sy},
-            ${midpoint} ${ty},
+        return `M ${sx} ${sy},
+            C ${sx + 100} ${sy},
+            ${tx - 100} ${ty},
             ${tx + offset} ${ty + Math.abs(offset)}
             ${arrow}`
     }
